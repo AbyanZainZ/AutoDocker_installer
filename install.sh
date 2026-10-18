@@ -58,34 +58,37 @@ else
     docker start webtop || true
 fi
 
-# 4. Clone Repository Vibot ke Folder Host
+# 4. Clone Repository VidBot ke Folder Mandiri
 echo ""
-echo "⏳ [4/5] Mengunduh repository Vibot..."
-TARGET_DIR="$HOME/Vibot"
+echo "⏳ [4/5] Mengunduh repository VidBot..."
+if [ "$(id -u)" -eq 0 ]; then
+    TARGET_DIR="/VidBot"
+else
+    TARGET_DIR="$HOME/VidBot"
+fi
+echo "[*] Lokasi Folder Bot: $TARGET_DIR"
+
 if [ ! -d "$TARGET_DIR" ]; then
     git clone https://github.com/AbyanZainZ/Vibot.git "$TARGET_DIR"
-    echo "✅ Repository Vibot berhasil di-clone ke: $TARGET_DIR"
+    echo "✅ Repository VidBot berhasil di-clone ke: $TARGET_DIR"
 else
-    echo "ℹ️ Folder Vibot sudah ada, melakukan git pull terbaru..."
+    echo "ℹ️ Folder $TARGET_DIR sudah ada, melakukan git pull terbaru..."
     cd "$TARGET_DIR" && git pull || true
 fi
 
-# 5. Pasang Library Python & Headless Browser
+# 5. Pasang Library Python & Headless Browser di VENV Mandiri
 echo ""
-echo "⏳ [5/5] Memasang library Python (Playwright, Camoufox, curl_cffi)..."
+echo "⏳ [5/5] Memasang library Python di $TARGET_DIR/venv ..."
 cd "$TARGET_DIR"
 
-# Bypass PEP 668 globally in host and webtop
-pip config set global.break-system-packages true 2>/dev/null || true
-python3 -m pip config set global.break-system-packages true 2>/dev/null || true
-docker exec webtop pip config set global.break-system-packages true 2>/dev/null || true
+if [ ! -d "$TARGET_DIR/venv" ]; then
+    python3 -m venv "$TARGET_DIR/venv"
+fi
 
-pip install --break-system-packages -r requirements.txt 2>/dev/null || \
-python3 -m pip install --break-system-packages -r requirements.txt 2>/dev/null || \
-pip install -r requirements.txt
+"$TARGET_DIR/venv/bin/pip" install -r requirements.txt
 
 echo "[*] Mengunduh binary browser Playwright..."
-python3 -m playwright install chromium firefox 2>/dev/null || playwright install chromium firefox 2>/dev/null || true
+"$TARGET_DIR/venv/bin/playwright" install chromium firefox 2>/dev/null || true
 
 # Berikan izin eksekusi script launcher
 chmod +x "$TARGET_DIR/start_bot.sh" 2>/dev/null || true
