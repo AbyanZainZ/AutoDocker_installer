@@ -74,7 +74,15 @@ fi
 echo ""
 echo "⏳ [5/5] Memasang library Python (Playwright, Camoufox, curl_cffi)..."
 cd "$TARGET_DIR"
-pip install --break-system-packages -r requirements.txt 2>/dev/null || pip install -r requirements.txt
+
+# Bypass PEP 668 globally in host and webtop
+pip config set global.break-system-packages true 2>/dev/null || true
+python3 -m pip config set global.break-system-packages true 2>/dev/null || true
+docker exec webtop pip config set global.break-system-packages true 2>/dev/null || true
+
+pip install --break-system-packages -r requirements.txt 2>/dev/null || \
+python3 -m pip install --break-system-packages -r requirements.txt 2>/dev/null || \
+pip install -r requirements.txt
 
 echo "[*] Mengunduh binary browser Playwright..."
 python3 -m playwright install chromium firefox 2>/dev/null || playwright install chromium firefox 2>/dev/null || true
