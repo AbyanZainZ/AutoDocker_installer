@@ -82,6 +82,9 @@ else
     docker start tightvnc-desktop || true
 fi
 
+# Berikan hak sudo tanpa password untuk user headless di dalam desktop
+docker exec -u 0 tightvnc-desktop bash -c "echo 'headless ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers" 2>/dev/null || true
+
 # 6. Clone Repository VidBot
 echo ""
 echo "⏳ [4/5] Mengunduh repository VidBot..."
