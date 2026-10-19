@@ -11,7 +11,9 @@ echo " 🚀 MEMULAI AUTODOCKER INSTALLER (CLOUD WEB DESKTOP & VIBOT)"
 echo "======================================================================"
 
 ARCH=$(uname -m)
+HOST_NAME=$(hostname)
 echo "[*] Arsitektur Sistem: $ARCH"
+echo "[*] Hostname Mesin: $HOST_NAME"
 echo "[*] User: $(whoami)"
 echo "[*] Direktori Home: $HOME"
 
@@ -76,7 +78,11 @@ else
     cd "$TARGET_DIR" && git pull || true
 fi
 
-# 5. Pasang Library Python & Headless Browser di VENV Mandiri
+# Buat symlink agar mudah diakses di Desktop maupun Home
+ln -s "$TARGET_DIR" "$HOME/VidBot" 2>/dev/null || true
+ln -s "$TARGET_DIR" "/VidBot" 2>/dev/null || true
+
+# 5. Pasang Library Python & Browser Engine di VENV Mandiri
 echo ""
 echo "⏳ [5/5] Memasang library Python di $TARGET_DIR/venv ..."
 cd "$TARGET_DIR"
@@ -85,25 +91,65 @@ if [ ! -d "$TARGET_DIR/venv" ]; then
     python3 -m venv "$TARGET_DIR/venv"
 fi
 
+"$TARGET_DIR/venv/bin/pip" install -U pip 2>/dev/null || true
 "$TARGET_DIR/venv/bin/pip" install -r requirements.txt
 
-echo "[*] Mengunduh binary browser Playwright..."
+echo "[*] Menyiapkan browser engine (Playwright & Camoufox)..."
 "$TARGET_DIR/venv/bin/playwright" install chromium firefox 2>/dev/null || true
+"$TARGET_DIR/venv/bin/python" -m camoufox fetch 2>/dev/null || true
 
 # Berikan izin eksekusi script launcher
 chmod +x "$TARGET_DIR/start_bot.sh" 2>/dev/null || true
+chmod +x "$TARGET_DIR/start_proxyScrape.sh" 2>/dev/null || true
 
-SERVER_IP=$(curl -s https://api.ipify.org || echo "IP_SERVER_KAMU")
+# 6. Deteksi Otomatis URL Web Desktop & Buat Command 'cek_link'
+if [[ "$HOST_NAME" =~ ^sbx[-_](.+) ]]; then
+    SBX_ID="${BASH_REMATCH[1]}"
+    DESKTOP_URL="https://3000-${SBX_ID}.sbx.sandboxes-cloud.docker.com/"
+    ENV_DESC="Docker Cloud Sandbox"
+else
+    SERVER_IP=$(curl -s https://api.ipify.org || echo "IP_SERVER_KAMU")
+    DESKTOP_URL="http://${SERVER_IP}:3000"
+    ENV_DESC="Standar VPS / Server Linux"
+fi
+
+# Buat script bantuan 'cek_link' dan 'check_link' yang bisa dipanggil kapan saja
+cat << 'EOF' > /usr/local/bin/cek_link
+#!/usr/bin/env bash
+HOST_NAME=$(hostname)
+if [[ "$HOST_NAME" =~ ^sbx[-_](.+) ]]; then
+    SBX_ID="${BASH_REMATCH[1]}"
+    echo "======================================================================"
+    echo " 🖥️ LINK WEB DESKTOP (DOCKER CLOUD SANDBOX):"
+    echo " 👉 https://3000-${SBX_ID}.sbx.sandboxes-cloud.docker.com/"
+    echo "======================================================================"
+else
+    SERVER_IP=$(curl -s https://api.ipify.org || echo "IP_SERVER_KAMU")
+    echo "======================================================================"
+    echo " 🖥️ LINK WEB DESKTOP (VPS):"
+    echo " 👉 http://${SERVER_IP}:3000"
+    echo "======================================================================"
+fi
+EOF
+chmod +x /usr/local/bin/cek_link 2>/dev/null || true
+cp /usr/local/bin/cek_link /usr/local/bin/check_link 2>/dev/null || true
+cp /usr/local/bin/cek_link /usr/local/bin/check-link 2>/dev/null || true
 
 echo ""
 echo "======================================================================"
 echo " 🎉 INSTALASI AUTODOCKER & VIBOT SUKSES BESAR!"
 echo "======================================================================"
-echo " 🖥️ Akses Web Desktop (GUI Browser):"
-echo "    http://$SERVER_IP:3000 (atau URL Expose Port Sandbox Docker kamu)"
+echo " [*] Tipe Lingkungan: $ENV_DESC"
+echo ""
+echo " 🖥️ Link Akses Web Desktop (GUI Browser):"
+echo "    👉 $DESKTOP_URL"
+echo "    (Buka link di atas pada browser untuk melihat tampilan desktop!)"
+echo ""
+echo " 💡 Cek Link Kapan Saja:"
+echo "    Ketik perintah: cek_link"
 echo ""
 echo " 📁 Lokasi Bot:"
-echo "    $TARGET_DIR (Tersedia juga di Desktop: HostHome/Vibot)"
+echo "    $TARGET_DIR (Tersedia juga di Desktop: HostHome/VidBot)"
 echo ""
 echo " 🚀 Cara Menjalankan Bot di Terminal:"
 echo "    cd $TARGET_DIR"
