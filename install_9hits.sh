@@ -110,6 +110,10 @@ sleep 1
 if [ ! -f "$INSTALL_DIR/nhviewer" ]; then
     curl -fL --retry 3 --connect-timeout 20 "$DEFAULT_DOWNLOAD" -o "$TMP_ARCHIVE"
     tar -xjf "$TMP_ARCHIVE" -C "$INSTALL_DIR"
+    if [ -d "$INSTALL_DIR/9hitsv6-linux64" ]; then
+        mv "$INSTALL_DIR"/9hitsv6-linux64/* "$INSTALL_DIR"/ 2>/dev/null || true
+        rm -rf "$INSTALL_DIR/9hitsv6-linux64"
+    fi
     rm -f "$TMP_ARCHIVE"
     echo "✅ 9Hits Viewer v6 berhasil diekstrak ke: $INSTALL_DIR"
 else
@@ -162,13 +166,18 @@ echo "✅ Inisialisasi pengaturan 9Hits selesai!"
 echo ""
 echo "⏳ [6/6] Meluncurkan 9Hits Background Runner di Screen '$SCREEN_SESSION'..."
 
-cat << 'EOF_RUNNER' > "$INSTALL_DIR/runner.sh"
+cat << EOF_RUNNER > "$INSTALL_DIR/runner.sh"
 #!/usr/bin/env bash
 export DISPLAY=':99'
 export LIBGL_ALWAYS_SOFTWARE='1'
 INSTALL_DIR='/opt/9hits'
 RESTART_DELAY=5
-VIEWER="$INSTALL_DIR/nhviewer"
+VIEWER="\$INSTALL_DIR/nhviewer"
+ACCESS_KEY="${ACCESS_KEY}"
+POOL_URL="${POOL_URL}"
+POOL_SESSIONS="${POOL_SESSIONS}"
+SESSION_NOTE="${SESSION_NOTE}"
+CACHE_LIMIT="${CACHE_LIMIT}"
 
 kill_viewer() {
   pkill -TERM -x nhviewer 2>/dev/null || true
@@ -180,11 +189,15 @@ kill_viewer() {
 
 while true; do
   kill_viewer
-  # Jalankan viewer secara headless dengan terminal logging
-  "$VIEWER" --auto-start --in-loop --render-to-terminal --cache-limit=209715200
-  rc=$?
-  printf '[%s] nhviewer berhenti (exit code %s). Restarting dalam %ss...\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$rc" "$RESTART_DELAY"
-  sleep "$RESTART_DELAY"
+  "\$VIEWER" --auto-start --in-loop --render-to-terminal \
+    --access-key="\$ACCESS_KEY" \
+    --ex-proxy-url="\$POOL_URL" \
+    --ex-proxy-sessions="\$POOL_SESSIONS" \
+    --session-note="\$SESSION_NOTE" \
+    --cache-limit="\$CACHE_LIMIT"
+  rc=\$?
+  printf '[%s] nhviewer berhenti (exit code %s). Restarting dalam %ss...\n' "\$(date '+%Y-%m-%d %H:%M:%S')" "\$rc" "\$RESTART_DELAY"
+  sleep "\$RESTART_DELAY"
 done
 EOF_RUNNER
 chmod +x "$INSTALL_DIR/runner.sh"
@@ -254,14 +267,36 @@ case "$1" in
   monitor)
     python3 /usr/local/bin/9hits-monitor-script.py
     ;;
+  token|key)
+    if [ -n "$2" ]; then
+      sed -i "s/^ACCESS_KEY=.*/ACCESS_KEY=\"$2\"/" "$INSTALL_DIR/runner.sh"
+      echo "✅ Access Key berhasil diupdate ke: $2"
+      echo "Merestart 9Hits..."
+      /usr/local/bin/9hits restart
+    else
+      echo "Penggunaan: 9hits token <ACCESS_KEY>"
+    fi
+    ;;
+  pool)
+    if [ -n "$2" ]; then
+      sed -i "s|^POOL_URL=.*|POOL_URL=\"$2\"|" "$INSTALL_DIR/runner.sh"
+      echo "✅ Pool URL berhasil diupdate ke: $2"
+      echo "Merestart 9Hits..."
+      /usr/local/bin/9hits restart
+    else
+      echo "Penggunaan: 9hits pool <POOL_URL>"
+    fi
+    ;;
   *)
     echo "Perintah 9Hits CLI:"
-    echo "  9hits status   : Lihat ringkasan status & log terbaru"
-    echo "  9hits monitor  : Buka interactive live monitor (CPU/RAM/Session)"
-    echo "  9hits logs     : Pantau realtime log viewer"
-    echo "  9hits restart  : Restart runner 9hits"
-    echo "  9hits stop     : Hentikan 9hits sepenuhnya"
-    echo "  9hits attach   : Masuk langsung ke screen session"
+    echo "  9hits status            : Lihat ringkasan status & log terbaru"
+    echo "  9hits monitor           : Buka interactive live monitor (CPU/RAM/Session)"
+    echo "  9hits logs              : Pantau realtime log viewer"
+    echo "  9hits token <KEY>       : Ganti / update Access Key"
+    echo "  9hits pool <URL>        : Ganti / update Proxy Pool URL"
+    echo "  9hits restart           : Restart runner 9hits"
+    echo "  9hits stop              : Hentikan 9hits sepenuhnya"
+    echo "  9hits attach            : Masuk langsung ke screen session"
     ;;
 esac
 EOF_CLI
