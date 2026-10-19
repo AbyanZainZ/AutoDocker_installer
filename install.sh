@@ -17,12 +17,14 @@ echo "[*] Hostname Mesin: $HOST_NAME"
 echo "[*] User: $(whoami)"
 echo "[*] Direktori Home: $HOME"
 
+export DEBIAN_FRONTEND=noninteractive
+
 # 1. Update OS & Paket Dasar
 echo ""
 echo "⏳ [1/5] Memperbarui sistem & paket dependensi dasar..."
 if command -v apt-get &> /dev/null; then
-    sudo apt-get update -y
-    sudo apt-get install -y curl wget git python3 python3-pip python3-venv xvfb ca-certificates
+    sudo DEBIAN_FRONTEND=noninteractive apt-get update -y < /dev/null
+    sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" curl wget git python3 python3-pip python3-venv xvfb ca-certificates < /dev/null
 fi
 
 # 2. Cek & Pasang Docker
@@ -31,7 +33,7 @@ echo "⏳ [2/5] Memeriksa Docker Engine..."
 if ! command -v docker &> /dev/null; then
     echo "[*] Docker belum terpasang. Mengunduh dan memasang Docker resmi..."
     curl -fsSL https://get.docker.com -o get-docker.sh
-    sh get-docker.sh
+    sh get-docker.sh < /dev/null
     rm -f get-docker.sh
     sudo usermod -aG docker "$(whoami)" 2>/dev/null || true
     echo "✅ Docker Engine berhasil dipasang!"
