@@ -41,38 +41,26 @@ else
     echo "✅ Docker Engine sudah aktif."
 fi
 
-# 3. Jalankan Web Desktop (Webtop XFCE) di Port 3000
-echo ""
-echo "⏳ [3/5] Meluncurkan Web Desktop (Webtop Ubuntu XFCE) di Port 3000..."
-if ! docker ps -a | grep -q "webtop"; then
-    docker run -d \
-      --name=webtop \
-      --security-opt seccomp=unconfined \
-      -e PUID=1000 \
-      -e PGID=1000 \
-      -e TZ=Asia/Jakarta \
-      -p 3000:3000 \
-      -v "$HOME":/config/Desktop/HostHome \
-      --shm-size=2gb \
-      --restart unless-stopped \
-      lscr.io/linuxserver/webtop:ubuntu-xfce
-    echo "✅ Container Webtop Desktop berhasil berjalan di background!"
-else
-    echo "ℹ️ Container Webtop sudah ada, memastikan status running..."
-    docker start webtop || true
-fi
-
-# 4. Clone Repository VidBot ke Folder Mandiri
-echo ""
-echo "⏳ [4/5] Mengunduh repository VidBot..."
+# 3. Tentukan Lokasi Folder VidBot
 if [ "$(id -u)" -eq 0 ]; then
     TARGET_DIR="/VidBot"
 else
     TARGET_DIR="$HOME/VidBot"
 fi
+mkdir -p "$TARGET_DIR" 2>/dev/null || true
 echo "[*] Lokasi Folder Bot: $TARGET_DIR"
 
-if [ ! -d "$TARGET_DIR" ]; then
+# 4. Hentikan container lama jika ada (termasuk tightvnc)
+if docker ps -a | grep -q "tightvnc-desktop"; then
+    echo "[*] Membersihkan container tightvnc lama..."
+    docker stop tightvnc-desktop 2>/dev/null || true
+    docker rm tightvnc-desktop 2>/dev/null || true
+fi
+
+# 5. Clone Repository VidBot ke Folder Mandiri
+echo ""
+echo "⏳ [3/5] Mengunduh repository VidBot..."
+if [ ! -f "$TARGET_DIR/vidara_bot.py" ] && [ ! -d "$TARGET_DIR/.git" ]; then
     git clone https://github.com/AbyanZainZ/Vibot.git "$TARGET_DIR"
     echo "✅ Repository VidBot berhasil di-clone ke: $TARGET_DIR"
 else
@@ -84,21 +72,47 @@ fi
 ln -s "$TARGET_DIR" "$HOME/VidBot" 2>/dev/null || true
 ln -s "$TARGET_DIR" "/VidBot" 2>/dev/null || true
 
-# 5. Pasang Library Python & Browser Engine di VENV Mandiri
+# 6. Jalankan Web Desktop (Webtop XFCE) di Port 3000
 echo ""
-echo "⏳ [5/5] Memasang library Python di $TARGET_DIR/venv ..."
+echo "⏳ [4/5] Meluncurkan Web Desktop (Webtop Ubuntu XFCE) di Port 3000..."
+if ! docker ps -a | grep -q "webtop"; then
+    docker run -d \
+      --name=webtop \
+      --security-opt seccomp=unconfined \
+      -e PUID=1000 \
+      -e PGID=1000 \
+      -e TZ=Asia/Jakarta \
+      -p 3000:3000 \
+      -v "$HOME":/config/Desktop/HostHome \
+      -v "$TARGET_DIR":/config/Desktop/VidBot \
+      --shm-size=2gb \
+      --restart unless-stopped \
+      lscr.io/linuxserver/webtop:ubuntu-xfce
+    echo "✅ Container Webtop Desktop berhasil berjalan di background!"
+else
+    echo "ℹ️ Container Webtop sudah ada, memastikan status running..."
+    docker start webtop || true
+fi
+
+# 7. Pasang Library Python di Host & di Container Desktop
+echo ""
+echo "⏳ [5/5] Memasang dependensi Python & browser engine..."
 cd "$TARGET_DIR"
 
+# Pasang di Host
 if [ ! -d "$TARGET_DIR/venv" ]; then
     python3 -m venv "$TARGET_DIR/venv"
 fi
-
 "$TARGET_DIR/venv/bin/pip" install -U pip 2>/dev/null || true
 "$TARGET_DIR/venv/bin/pip" install -r requirements.txt
-
-echo "[*] Menyiapkan browser engine (Playwright & Camoufox)..."
 "$TARGET_DIR/venv/bin/playwright" install chromium firefox 2>/dev/null || true
 "$TARGET_DIR/venv/bin/python" -m camoufox fetch 2>/dev/null || true
+
+# Pasang juga di dalam container Webtop agar terminal desktop langsung bisa menjalankan bot
+echo "[*] Menyiapkan environment Python di dalam Web Desktop..."
+docker exec -u 0 webtop bash -c "apt-get update -y && apt-get install -y python3 python3-pip python3-venv xvfb" 2>/dev/null || true
+docker exec -u 0 webtop bash -c "pip3 install --break-system-packages -r /config/Desktop/VidBot/requirements.txt || pip3 install -r /config/Desktop/VidBot/requirements.txt" 2>/dev/null || true
+docker exec -u 0 webtop bash -c "echo 'abc ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers" 2>/dev/null || true
 
 # Berikan izin eksekusi script launcher
 chmod +x "$TARGET_DIR/start_bot.sh" 2>/dev/null || true
