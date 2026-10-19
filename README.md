@@ -1,48 +1,63 @@
 # 🚀 AutoDocker Installer: Cloud Web Desktop & Vibot Suite
 
-Script instalasi otomatis **1 baris perintah (One-Line Command)** untuk menyiapkan **Web Desktop GUI (noVNC / Webtop XFCE)** beserta bot **Vibot (Vidara & DoodStream Multi-Proxy Viewer Bot)** di VPS Linux (Ubuntu / Debian) atau Docker Cloud Sandbox.
+Script instalasi otomatis **1 baris perintah (One-Line Command)** untuk menyiapkan **Desktop GUI (TightVNC / noVNC / Webtop XFCE)** beserta bot **Vibot (Vidara & Multi-Proxy Bot)** di VPS Linux (Ubuntu / Debian) atau Docker Cloud Sandbox.
 
 ---
 
-## ⚡ Perintah Cepat untuk Install (One-Line Command)
-
-Cukup copy-paste perintah ini ke terminal Linux / VPS / Sandbox kamu:
+## ⚡ 1. Edisi Rekomendasi: Ultra-Lightweight TightVNC & noVNC (Dual-Mode)
+> **Paling Cepat & Ringan:** Menggunakan protokol RFB murni (hanya mengirim pixel yang berubah). Jauh lebih enteng di CPU dan RAM ($\sim$150 MB RAM). Bisa dibuka langsung via Web Browser (noVNC HTML5) dan/atau aplikasi TightVNC Viewer di laptop!
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/AbyanZainZ/AutoDocker_installer/main/install.sh | bash
+sudo su
+curl -fsSL https://raw.githubusercontent.com/AbyanZainZ/AutoDocker_installer/main/install_vnc.sh -o /tmp/install_vnc.sh && bash /tmp/install_vnc.sh
+```
+
+### 🖥️ Cara Akses TightVNC Edition:
+1. **🌐 Web Browser (noVNC):**
+   - Buka link: `https://3000-<SANDBOX_ID>.sbx.sandboxes-cloud.docker.com/vnc.html?autoconnect=true&password=vidbot123`
+   - Password VNC: `vidbot123`
+2. **⚡ Aplikasi TightVNC / RealVNC Viewer (Zero Lag):**
+   - Port VNC: `5901`
+   - Password: `vidbot123`
+   - Di Docker Cloud Sandbox: Buat SSH tunnel dari PC:
+     `ssh -N -L 5901:127.0.0.1:5901 <user>@sbx_cloud`
+     lalu buka TightVNC Viewer ke `127.0.0.1:5901`.
+
+---
+
+## 🖥️ 2. Edisi Klasik: Webtop (KasmVNC)
+> Menggunakan streaming video berbasis web langsung di browser (Port 3000).
+
+```bash
+sudo su
+curl -fsSL https://raw.githubusercontent.com/AbyanZainZ/AutoDocker_installer/main/install.sh -o /tmp/install.sh && bash /tmp/install.sh
 ```
 
 ---
 
-## 🛠️ Apa Saja yang Dikerjakan Otomatis oleh Script Ini?
-1. **Pemeriksaan Arsitektur & Dependensi Sistem:** Mendukung `x86_64` (AMD64) dan `aarch64` (ARM64).
-2. **Instalasi Docker Engine Otomatis:** Jika Docker belum terpasang, script akan memasang Docker resmi.
-3. **Peluncuran Web Desktop (Webtop XFCE):** Menjalankan container desktop di **Port 3000** dengan RAM shared memory 2 GB dan automount folder `$HOME` ke Desktop (`HostHome`).
-4. **Download Otomatis Bot Vibot:** Meng-clone repository [Vibot](https://github.com/AbyanZainZ/Vibot) ke dalam folder `$HOME/Vibot`.
-5. **Instalasi Python, Browser & Headless Drivers:** Memasang `playwright`, `camoufox`, binary Chromium & Firefox.
+## 💡 Perintah Cepat 'cek_link'
+Kapan saja kamu lupa alamat link Web Desktop atau info VNC kamu, cukup ketik di terminal:
+```bash
+cek_link
+```
 
 ---
 
-## 🖥️ Cara Akses Web Desktop
-Setelah instalasi selesai:
-* **Jika di VPS Biasa:** Buka browser dan kunjungi:
-  `http://IP_VPS_KAMU:3000`
-* **Jika di Docker Cloud Sandbox:** Buka URL publik dari Port 3000 yang sudah di-expose:
-  `https://3000-<SANDBOX_ID>.sbx.sandboxes-cloud.docker.com/`
-
----
-
-## 🤖 Cara Menjalankan Bot di Dalam Desktop / Terminal
-1. Buka terminal atau folder `HostHome/Vibot` di Desktop:
+## 🤖 Cara Menjalankan Bot di Dalam Server / Desktop
+1. Masuk ke folder bot:
    ```bash
-   cd ~/Vibot
+   cd /VidBot
+   ```
+2. Isi link target di `link.txt`:
+   ```bash
+   nano link.txt
+   ```
+3. Scrape & Check proxy terbaru:
+   ```bash
+   ./start_proxyScrape.sh
+   ```
+4. Jalankan bot:
+   ```bash
    ./start_bot.sh
    ```
-2. Untuk mengedit target URL atau ganti protokol proxy (`http` / `socks5`), cukup edit file `config.json`.
-
----
-
-## 🐳 Opsi Alternatif Menggunakan Docker Compose
-```bash
-docker compose up -d
-```
+   *(Atau jalankan di background: `nohup ./start_bot.sh > bot.log 2>&1 &`)*
