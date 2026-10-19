@@ -61,3 +61,21 @@ cek_link
    ./start_bot.sh
    ```
    *(Atau jalankan di background: `nohup ./start_bot.sh > bot.log 2>&1 &`)*
+
+---
+
+## 🧊 3. 9Hits Viewer v6 Headless Installer (LOW CPU / NO GUI)
+> **Khusus 9Hits Traffic Exchange:** Menjalankan 9Hits Viewer v6 secara 100% headless (menggunakan virtual display Xvfb `:99`) tanpa desktop GUI dan tanpa VNC, dilengkapi **uBlockDNS Ad Blocker** untuk memblokir iklan video berat, hemat 50-70% CPU/RAM!
+
+```bash
+sudo su
+curl -fsSL https://raw.githubusercontent.com/AbyanZainZ/AutoDocker_installer/main/install_9hits.sh -o /tmp/install_9hits.sh && bash /tmp/install_9hits.sh
+```
+
+### 🛠️ Fitur Perintah '9hits':
+- `9hits status` : Cek status proses nhviewer, screen, dan 15 log terbaru
+- `9hits monitor`: Buka live monitor interaktif (CPU, RAM, jumlah proses)
+- `9hits logs`   : Pantau live log viewer
+- `9hits restart`: Restart runner 9hits
+- `9hits stop`   : Hentikan 9hits sepenuhnya
+- `9hits attach` : Masuk langsung ke screen session terminal 9hits
