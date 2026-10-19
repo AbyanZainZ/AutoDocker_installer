@@ -116,7 +116,7 @@ else
 fi
 
 # Buat script bantuan 'cek_link' dan 'check_link' yang bisa dipanggil kapan saja
-cat << 'EOF' > /usr/local/bin/cek_link
+cat << 'EOF' | sudo tee /usr/local/bin/cek_link > /dev/null
 #!/usr/bin/env bash
 HOST_NAME=$(hostname)
 if [[ "$HOST_NAME" =~ ^sbx[-_](.+) ]]; then
@@ -133,9 +133,9 @@ else
     echo "======================================================================"
 fi
 EOF
-chmod +x /usr/local/bin/cek_link 2>/dev/null || true
-cp /usr/local/bin/cek_link /usr/local/bin/check_link 2>/dev/null || true
-cp /usr/local/bin/cek_link /usr/local/bin/check-link 2>/dev/null || true
+sudo chmod +x /usr/local/bin/cek_link 2>/dev/null || true
+sudo cp /usr/local/bin/cek_link /usr/local/bin/check_link 2>/dev/null || true
+sudo cp /usr/local/bin/cek_link /usr/local/bin/check-link 2>/dev/null || true
 
 echo ""
 echo "======================================================================"
