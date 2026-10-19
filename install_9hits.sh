@@ -89,9 +89,10 @@ if command -v apt-get &> /dev/null; then
     apt-get update -q < /dev/null
     apt-get install -y --no-install-recommends \
       ca-certificates wget curl screen unzip acl xvfb bzip2 \
-      libcanberra-gtk-module libxss1 libxtst6 libnss3 \
-      psmisc procps bc libgtk-3-0 libgbm-dev libatspi2.0-0 \
-      libatomic1 x11-utils iproute2 coreutils python3 python3-pip < /dev/null
+      libxss1 libxtst6 libnss3 psmisc procps bc libgbm-dev \
+      libatomic1 x11-utils iproute2 coreutils python3 python3-pip < /dev/null || true
+    apt-get install -y --no-install-recommends libgtk-3-0 libatspi2.0-0 < /dev/null || true
+    apt-get install -y --no-install-recommends libcanberra-gtk3-module < /dev/null || true
 fi
 
 # 5. Unduh & Ekstrak 9Hits Viewer v6 Resmi
